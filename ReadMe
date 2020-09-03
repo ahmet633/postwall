@@ -1,0 +1,13 @@
+A simple social media template created using django.
+Usage requirements:
+-python3
+-django module for python
+-djangorestframework module for python
+-django-cors-headers module for python
+
+How to use:
+-clone or extract from downloaded .zip
+-"cd postwall" in terminal
+-"python3 manage.py runserver" in terminal
+
+for further documentation about django visit https://www.djangoproject.com/

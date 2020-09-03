@@ -1,0 +1,192 @@
+{% extends 'pages/base.html' %}
+
+{% block content %}
+<div id="content">
+<h1 style="text-align:center;">Welcome to PostWall!</h1>
+<div id="form">
+  <form method="POST" id="post-create-form" action="api/post/create">
+    {% csrf_token %}
+    <input type="hidden" value="/" name="next"/>
+    <div id="post-form-error" style="display: none;"></div>
+    <textarea required="required" name="content" placeholder="Your post..."></textarea>
+    <button type="submit">Post!</button>
+  </form>
+</div>
+
+<div id="posts">
+</div>
+</div>
+
+<style>
+  body{
+    background-color: lightgrey;
+  }
+
+  #content{
+    max-width:700px;
+    margin:auto;
+  }
+  
+  #form{
+    max-width:500px;
+    margin:auto;
+    margin-bottom: 30px;
+    text-align:center;
+  }
+  
+  .post{
+    background-color: white;
+    max-width:500px;
+    margin:auto;
+    margin-bottom: 30px;
+    text-align:center;
+    border: 1px black solid;
+    padding: 10px;
+  }
+
+</style>
+
+
+<script>
+  const postsElement = document.getElementById('posts')
+  const postFormElement = document.getElementById('post-create-form')
+
+
+  function handlePostError(errorMsg, display){
+    const errorDiv = document.getElementById('post-form-error')
+    if(display){
+      errorDiv.innerText = errorMsg
+      errorDiv.style.display = 'block'
+    } else {
+      errorDiv.style.display = 'none'
+    }
+  }
+
+
+  postFormElement.addEventListener('submit', function(e){
+    e.preventDefault()
+    const form = e.target
+    const formData = new FormData(form)
+    const method = form.getAttribute('method')
+    const url = form.getAttribute('action')
+    const responseType = 'json'
+
+    const xhr = new XMLHttpRequest()
+    xhr.responseType = responseType
+    xhr.open(method, url)
+    xhr.setRequestHeader("HTTP_X_REQUESTED_WITH", "XMLHttpRequest")
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
+    xhr.onload = function(){
+      // TRY 400, 201 AND 500
+      if(xhr.status === 201){
+        handlePostError("", false)
+        const server_response = xhr.response
+        const newPost = createPostDiv(server_response)
+        postsElement.prepend(newPost)
+        form.reset()
+      } else if(xhr.status === 400){
+        const errorJson = xhr.response.content[0]
+        console.log(errorJson + " 400")
+        handlePostError(errorJson, true)
+      } else if(xhr.status === 403){
+        const errorJson = xhr.response.detail
+        console.log(errorJson + " 403 Forbidden")
+      } else if(xhr.status === 500){
+        const errorJson = xhr.response
+        console.log(errorJson + " 500")
+        alert("There was a server error. Please try again in a few minutes.")
+      }
+    }
+    xhr.send(formData)
+  })
+
+  function createPostDiv(post){
+    let postdiv = document.createElement('div')
+    let likebtn = document.createElement('button')
+    likebtn.addEventListener('click', function(e){
+      e.preventDefault()
+      const csrftoken = getCookie('csrftoken');
+      const data = JSON.stringify({
+
+        id: post.id
+      })
+      const xhr = new XMLHttpRequest()
+      xhr.responseType = 'json'
+      xhr.open('POST', 'api/post/'+post.id+'/like')
+      xhr.setRequestHeader("HTTP_X_REQUESTED_WITH", "XMLHttpRequest")
+      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
+      xhr.setRequestHeader("X-CSRFToken", csrftoken)
+      xhr.onload = function(){
+        // will be changed with react.js
+        loadPosts(postsElement)
+      }
+      xhr.send()
+    })
+    likebtn.innerText = post.likes.length + ' Like!'
+    let text = document.createElement('div')
+    postdiv.classList.add('post')
+    text.innerHTML = post.content
+    postdiv.appendChild(text)
+    postdiv.appendChild(likebtn)
+    return postdiv
+  }
+
+  function loadPosts(toAppend){
+    // clear the element first
+    toAppend.innerText = ""
+    const xhr = new XMLHttpRequest()
+    const method = 'GET'
+    const url = 'api/posts'
+    const responseType = 'json'
+
+    xhr.responseType = responseType
+    xhr.open(method, url)
+    xhr.onload = function(){
+      var listofitems = xhr.response
+      for(let item of listofitems){
+        let post = createPostDiv(item)
+        toAppend.appendChild(post)
+      }
+    }
+    xhr.send()
+  }
+
+  function loadPostsUser(user, toAppend){
+    const xhr = new XMLHttpRequest()
+    const method = 'GET'
+    const url = 'api/profile/'+user.username+'/posts'
+    const responseType = 'json'
+
+    xhr.responseType = responseType
+    xhr.open(method, url)
+    xhr.onload = function(){
+      var listofitems = xhr.response
+      for(let item of listofitems){
+        let post = createPostDiv(item)
+        toAppend.appendChild(post)
+      }
+    }
+    xhr.send(user=user)
+  }
+
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              // Does this cookie string begin with the name we want?
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+    loadPosts(postsElement)
+
+</script>
+
+{% endblock %}

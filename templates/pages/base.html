@@ -1,0 +1,38 @@
+<div id="topbar">
+{% if user.is_authenticated %}
+  <div class="topbar-link">You are now logged in as {{user.username}}</div>
+{% endif %}
+  <div class="topbar-link"><a href="/">Homepage</a></div>
+{% if user.is_authenticated %}
+  <div class="topbar-link"><a href="/profile/{{user.username}}"">Profile</a></div>
+  <div class="topbar-link"><a href="/logout">Logout</a></div>
+{% else %}
+  <div class="topbar-link"><a href="/login">Login</a></div>
+  <div class="topbar-link"><a href="/register">Register</a></div>
+{% endif %}
+</div>
+
+
+{% block content %}
+
+{% endblock content %}
+
+<style>
+  #topbar{
+    height: 100px;
+    color: white;
+    background-color: black;
+    font-size: 20px;
+  }
+  
+  .topbar-link{
+    display: inline-block;
+    color: white;
+    margin: 10px;
+    padding: 20px;
+  }
+  
+  .topbar-link a{
+    color: white;
+  }
+</style>
